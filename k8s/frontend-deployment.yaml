@@ -18,6 +18,8 @@ spec:
           imagePullPolicy: Always
           env:
             - name: BASE_URL
-              value: "http://$(BACKEND_SERVICE_HOST):8080/api"
+              value: "http://$(BACKEND_SERVICE_HOST):$(BACKEND_SERVICE_PORT)/api"
+            - name: PORT
+              value: "3001"
           ports:
-            - containerPort: 3000
+            - containerPort: 3001
