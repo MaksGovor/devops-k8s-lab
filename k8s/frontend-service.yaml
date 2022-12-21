@@ -4,8 +4,6 @@ metadata:
   name: frontend
 spec:
   type: LoadBalancer
-  externalIPs:
-  - 192.168.0.19
   selector:
     app: frontend
   ports:
