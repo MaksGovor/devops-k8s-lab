@@ -53,9 +53,6 @@ spec:
     stages {
         stage('Test') {
             steps {
-                // TODO: Run 'npm test' using the node container
-                // TODO: Make sure you do it inside express-fe folder.
-                // Search google for Jenkins pipeline 'dir' function
                 container('node') {
                     dir('express-fe') {
                         sh "npm test"
@@ -79,14 +76,28 @@ spec:
         }
         stage('Deploy') {
             steps {
-                // TODO: Need to do two things
-                // TODO: First: somehow using bash, substitute new params.IMAGE_NAME and BUILD_NUMBER variable into your frontend deployment.
-                // TODO: Hint: bitnami/kubectl has 'sed' utility available
-                // TODO: But you can use any other solution (Kustomize, etc.)
-                // TODO: Second - use kubectl apply from kubectl container
+                container('kubectl') {
+                    // Using sed
+                    // sh "sed -i \"s|${params.IMAGE_NAME}:latest|${params.IMAGE_NAME}:${BUILD_NUMBER}|\" ./k8s/frontend-deployment.yaml"
+                    // sh 'kubectl apply -f ./k8s'
 
-                sh "sed -i \"s+${params.IMAGE_NAME}:latest+${params.IMAGE_NAME}:${BUILD_NUMBER}+\" ./k8s/frontend-deployment.yaml"
-                sh 'kubectl apply -f ./k8s'
+                    // Using Kustomize
+                    dir('k8s') {
+                        sh """cat <<EOF > "kustomization.yaml"
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- frontend-deployment.yaml
+
+images:
+  - name: ${params.IMAGE_NAME}
+    newTag: "${BUILD_NUMBER}"
+EOF"""
+                    }
+                    
+                    sh 'kubectl apply -k ./k8s'
+                }
             }
         }
         stage('Test deployment') {
@@ -112,13 +123,12 @@ spec:
                 }
             }
             steps {
-                // TODO: Using ubuntu container install `curl`
-                // TODO: Use curl to make a request to curl http://frontend:80/books
-                // TODO: You probably have to wait for like 60-120 second till everything is deployed for the first time
-                sh "apt-get update -y"
-                sh "apt-get -y install curl"
-                sh "sleep 60"
-                sh "curl http://frontend:80/books"
+                container('ubuntu') {
+                    sh "apt-get update -y"
+                    sh "apt-get install -y curl"
+                    sh "sleep 90"
+                    sh "curl http://frontend:80/books"
+                }
             }
         }
     }
