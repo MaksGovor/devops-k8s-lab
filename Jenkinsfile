@@ -47,7 +47,7 @@ spec:
     }
 
     parameters {
-        string(name: 'IMAGE_NAME', defaultValue: '', description: 'Your image name in format USER_NAME/IMAGE. You can write it as default value if you want')
+        string(name: 'IMAGE_NAME', defaultValue: 'maksgovor/express-fe', description: 'Your image name in format USER_NAME/IMAGE. You can write it as default value if you want')
     }
 
     stages {
@@ -56,6 +56,11 @@ spec:
                 // TODO: Run 'npm test' using the node container
                 // TODO: Make sure you do it inside express-fe folder.
                 // Search google for Jenkins pipeline 'dir' function
+                container('node') {
+                    dir('express-fe') {
+                        sh "npm test"
+                    }
+                }
             }
         }
         stage('Build image') {
@@ -79,6 +84,9 @@ spec:
                 // TODO: Hint: bitnami/kubectl has 'sed' utility available
                 // TODO: But you can use any other solution (Kustomize, etc.)
                 // TODO: Second - use kubectl apply from kubectl container
+
+                sh "sed -i \"s+${params.IMAGE_NAME}:latest+${params.IMAGE_NAME}:${BUILD_NUMBER}+\" ./k8s/frontend-deployment.yaml"
+                sh 'kubectl apply -f ./k8s'
             }
         }
         stage('Test deployment') {
@@ -107,6 +115,10 @@ spec:
                 // TODO: Using ubuntu container install `curl`
                 // TODO: Use curl to make a request to curl http://frontend:80/books
                 // TODO: You probably have to wait for like 60-120 second till everything is deployed for the first time
+                sh "apt-get update -y"
+                sh "apt-get -y install curl"
+                sh "sleep 60"
+                sh "curl http://frontend:80/books"
             }
         }
     }
