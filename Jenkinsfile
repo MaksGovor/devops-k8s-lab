@@ -88,7 +88,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+- mysql-service.yaml
+- mysql-stateful.yaml
+- backend-deployment.yaml
+- backend-service.yaml
 - frontend-deployment.yaml
+- frontend-service.yaml
 
 images:
   - name: ${params.IMAGE_NAME}
